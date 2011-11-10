@@ -29,9 +29,9 @@ function acp#enable()
     autocmd AcpGlobalAutoCommand CursorMovedI * call s:feedPopup()
   endif
 
-  nnoremap <silent> i i<C-r>=<SID>feedPopup()<CR>
-  nnoremap <silent> a a<C-r>=<SID>feedPopup()<CR>
-  nnoremap <silent> R R<C-r>=<SID>feedPopup()<CR>
+  " nnoremap <silent> i i<C-r>=<SID>feedPopup()<CR>
+  " nnoremap <silent> a a<C-r>=<SID>feedPopup()<CR>
+  " nnoremap <silent> R R<C-r>=<SID>feedPopup()<CR>
 endfunction
 
 "
@@ -311,6 +311,10 @@ endfunction
 "
 function s:makeCurrentBehaviorSet()
   let modified = s:isModifiedSinceLastCall()
+  if !modified
+    return []
+  endif
+
   if exists('s:behavsCurrent[s:iBehavs].repeat') && s:behavsCurrent[s:iBehavs].repeat
     let behavs = [ s:behavsCurrent[s:iBehavs] ]
   elseif exists('s:behavsCurrent[s:iBehavs]')
@@ -335,8 +339,31 @@ function s:makeCurrentBehaviorSet()
   return behavs
 endfunction
 
+let g:LastLine = ""
+let g:LastLineNum = -1
+
+fun s:NotModified()
+  let result = 1
+  let current = getline(".")
+  let currentN = line(".")
+
+  if(currentN == g:LastLineNum)
+    if(current != g:LastLine)
+      let result = 0
+    endif
+  else
+    let g:LastLineNum = currentN
+  endif
+
+  let g:LastLine = current
+  return result
+endf
+
 "
 function s:feedPopup()
+  if call("s:NotModified", [])
+    return ''
+  endif
   " NOTE: CursorMovedI is not triggered while the popup menu is visible. And
   "       it will be triggered when popup menu is disappeared.
   if s:lockCount > 0 || pumvisible() || &paste
